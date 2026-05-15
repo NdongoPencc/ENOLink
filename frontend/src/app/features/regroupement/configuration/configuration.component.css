@@ -1,0 +1,77 @@
+.config-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 20px;
+  align-items: start;
+}
+
+.section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 20px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--primary);
+}
+
+.poids-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+.range-input {
+  width: 100%;
+  accent-color: var(--primary);
+  height: 6px;
+  cursor: pointer;
+}
+
+.range-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--primary);
+  text-align: center;
+  margin-top: 4px;
+}
+
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+.launch-btn { width: 100%; justify-content: center; margin-top: 8px; }
+
+.eno-panel { max-height: 600px; overflow-y: auto; }
+
+.eno-list { display: flex; flex-direction: column; gap: 8px; }
+
+.eno-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.eno-info { display: flex; flex-direction: column; }
+.eno-nom { font-size: 13px; font-weight: 600; color: var(--text); }
+.eno-region { font-size: 11px; color: var(--text-muted); }
+.eno-count { background: var(--primary); color: white; padding: 3px 10px; border-radius: 10px; font-size: 12px; font-weight: 600; }
+
+.success-launch { text-align: center; padding: 48px; }
+.launch-icon { font-size: 48px; margin-bottom: 16px; }
+.success-launch h2 { font-size: 22px; color: var(--success); margin-bottom: 8px; }
+.success-launch p { color: var(--text-muted); margin-bottom: 8px; }
+.launch-actions { display: flex; gap: 12px; justify-content: center; margin-top: 24px; }
+
+.spinner-sm {
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+}
+
+@media (max-width: 900px) {
+  .config-layout { grid-template-columns: 1fr; }
+  .poids-grid, .form-row { grid-template-columns: 1fr; }
+}

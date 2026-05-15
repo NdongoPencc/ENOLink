@@ -1,0 +1,89 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">🏠 Mon groupe</h1>
+      <p class="page-subtitle">{{ auth.utilisateur()?.nom_complet }}</p>
+    </div>
+  </div>
+
+  @if (loading) {
+    <div class="loading-overlay"><div class="spinner"></div><span>Chargement...</span></div>
+  } @else if (erreur) {
+    <div class="alert alert-warning">{{ erreur }}</div>
+  } @else if (groupe) {
+    @if (groupe.est_hors_eno) {
+      <div class="alert alert-warning">
+        ⚠️ Vous avez été rattaché au groupe de l'ENO <strong>{{ groupe.eno_rattachement.nom }}</strong>
+        car votre ENO d'inscription ne comptait pas assez d'étudiants pour former un groupe complet.
+      </div>
+    }
+
+    <div class="groupe-layout">
+      <div class="left-panel">
+        <!-- Info groupe -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Groupe {{ groupe.groupe_numero }}</h2>
+            <span class="badge badge-validee">Validé</span>
+          </div>
+
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">Cohorte</span>
+              <span class="info-value">{{ groupe.cohorte }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">ENO de rattachement</span>
+              <span class="info-value">{{ groupe.eno_rattachement.nom }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Région</span>
+              <span class="info-value">{{ groupe.eno_rattachement.region }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Ville</span>
+              <span class="info-value">{{ groupe.eno_rattachement.ville }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Distance à l'ENO</span>
+              <span class="info-value">{{ groupe.distance_eno_km | number:'1.2-2' }} km</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Membres</span>
+              <span class="info-value">{{ groupe.membres.length }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Membres -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">👥 Membres du groupe</h2>
+          </div>
+          <div class="membres-list">
+            @for (m of groupe.membres; track m.email) {
+              <div class="membre-card" [class.hors-eno]="m.est_hors_eno">
+                <div class="membre-avatar">{{ m.prenom[0] }}{{ m.nom[0] }}</div>
+                <div class="membre-info">
+                  <strong>{{ m.prenom }} {{ m.nom }}</strong>
+                  <span>{{ m.email }}</span>
+                  @if (m.est_hors_eno) {
+                    <span class="hors-eno-label">⚠️ Rattachement hors ENO</span>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Carte -->
+      <div class="card map-card">
+        <div class="card-header">
+          <h2 class="card-title">📍 Localisation de l'ENO</h2>
+        </div>
+        <div #mapContainer class="map-container"></div>
+      </div>
+    </div>
+  }
+</div>

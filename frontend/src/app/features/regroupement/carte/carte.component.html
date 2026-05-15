@@ -1,0 +1,141 @@
+<div class="carte-page">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <h2>🗺️ Carte des groupes</h2>
+      @if (regroupement) {
+        <span class="badge" [class]="'badge-' + regroupement.statut.toLowerCase()">{{ regroupement.statut }}</span>
+      }
+    </div>
+
+    @if (loading) {
+      <div class="loading-overlay"><div class="spinner"></div></div>
+    }
+
+    <!-- Progression en cours -->
+    @if (enCours && progression) {
+      <div class="progression-panel">
+        <h3>⏳ CGA en cours...</h3>
+        <div class="progress-bar-container">
+          <div class="progress-bar" [style.width.%]="pourcentageProgression"></div>
+        </div>
+        <div class="prog-stats">
+          @if (progression.derniere_generation) {
+            <div class="prog-stat">
+              <span>Génération</span>
+              <strong>{{ progression.derniere_generation.generation }}</strong>
+            </div>
+            <div class="prog-stat">
+              <span>Fitness</span>
+              <strong>{{ progression.derniere_generation.fitness | number:'1.4-4' }}</strong>
+            </div>
+            <div class="prog-stat">
+              <span>D_geo</span>
+              <strong>{{ progression.derniere_generation.d_geo | number:'1.2-2' }} km</strong>
+            </div>
+            <div class="prog-stat">
+              <span>P_ENO</span>
+              <strong>{{ progression.derniere_generation.p_eno }}</strong>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Résultats finaux -->
+    @if (regroupement && (regroupement.statut === 'TERMINE' || regroupement.statut === 'VALIDE')) {
+      <div class="resultats-panel">
+        <div class="metriques-grid">
+          <div class="metrique">
+            <span class="m-val">{{ regroupement.nb_groupes }}</span>
+            <span class="m-lab">Groupes</span>
+          </div>
+          <div class="metrique">
+            <span class="m-val">{{ regroupement.d_geo_final | number:'1.2-2' }}</span>
+            <span class="m-lab">D_geo (km)</span>
+          </div>
+          <div class="metrique">
+            <span class="m-val">{{ regroupement.p_eno_final }}</span>
+            <span class="m-lab">P_ENO</span>
+          </div>
+          <div class="metrique">
+            <span class="m-val">{{ regroupement.temps_execution_sec | number:'1.1-1' }}s</span>
+            <span class="m-lab">Durée</span>
+          </div>
+        </div>
+
+        @if (regroupement.nb_hors_eno && regroupement.nb_hors_eno > 0) {
+          <div class="alert alert-warning">
+            ⚠️ {{ regroupement.nb_hors_eno }} apprenant(s) rattaché(s) hors ENO administratif
+          </div>
+        }
+
+        <div class="export-actions">
+          <button class="btn btn-outline btn-sm" (click)="exportCSV()">⬇️ CSV</button>
+          <button class="btn btn-outline btn-sm" (click)="exportPDF()">📄 PDF</button>
+          @if (auth.isDFIP() && regroupement.statut === 'TERMINE') {
+            <a [routerLink]="['/regroupements', regroupementId, 'validation']" class="btn btn-success btn-sm">✅ Valider</a>
+          }
+          <a [routerLink]="['/regroupements', regroupementId, 'metriques']" class="btn btn-accent btn-sm">📊 Métriques</a>
+        </div>
+      </div>
+
+      <!-- Liste des groupes -->
+      <div class="groupes-list">
+        <h3>Groupes ({{ groupes.length }})</h3>
+        @for (g of groupes; track g.id) {
+          <div class="groupe-item" [class.selected]="groupeSelectionne?.id === g.id"
+               (click)="selectionnerGroupe(g)">
+            <div class="groupe-numero" [style.background]="'#1a237e'">{{ g.numero }}</div>
+            <div class="groupe-info">
+              <span class="groupe-eno">{{ g.eno_nom }}</span>
+              <span class="groupe-stats">{{ g.taille }} membres · {{ g.dist_moy_km | number:'1.1-1' }} km moy.</span>
+              @if (g.nb_hors_eno > 0) {
+                <span class="hors-eno-badge">⚠️ {{ g.nb_hors_eno }} hors ENO</span>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    @if (regroupement?.statut === 'ERREUR') {
+      <div class="alert alert-danger">
+        ❌ Erreur : {{ regroupement?.message_erreur }}
+      </div>
+    }
+  </div>
+
+  <!-- Carte -->
+  <div class="map-wrapper">
+    <div #mapContainer class="map-container"></div>
+
+    @if (groupeSelectionne) {
+      <div class="groupe-detail-overlay">
+        <div class="detail-header">
+          <strong>Groupe {{ groupeSelectionne.numero }} — {{ groupeSelectionne.eno_nom }}</strong>
+          <button (click)="groupeSelectionne = null; afficherGroupesSurCarte()">✕</button>
+        </div>
+        <div class="detail-stats">
+          <span>{{ groupeSelectionne.taille }} membres</span>
+          <span>{{ groupeSelectionne.dist_moy_km | number:'1.2-2' }} km moy.</span>
+          <span>{{ groupeSelectionne.dist_max_km | number:'1.2-2' }} km max.</span>
+          @if (groupeSelectionne.nb_hors_eno > 0) {
+            <span class="hors-eno">⚠️ {{ groupeSelectionne.nb_hors_eno }} hors ENO</span>
+          }
+        </div>
+        @if (groupeSelectionne.membres) {
+          <div class="membres-list">
+            @for (m of groupeSelectionne.membres; track m.id) {
+              <div class="membre-item" [class.hors-eno]="m.est_hors_eno">
+                <span>{{ m.apprenant.prenom }} {{ m.apprenant.nom }}</span>
+                <span>{{ m.distance_eno_km | number:'1.1-1' }} km</span>
+                @if (m.est_hors_eno) { <span class="hors-badge">⚠️</span> }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

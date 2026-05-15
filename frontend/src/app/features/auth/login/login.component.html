@@ -1,0 +1,107 @@
+<div class="login-page">
+  <div class="login-wrapper">
+
+    <!-- Panneau gauche — Branding UN-CHK (sans logo, centré) -->
+    <div class="login-branding">
+      <div class="branding-content">
+        <div class="branding-title">
+          Système de Regroupement<br>Automatique des Apprenants
+        </div>
+
+        <div class="branding-desc">
+          Plateforme de constitution optimale des groupes de travail
+          pour les 18 ENO de l'Université Numérique Cheikh Hamidou Kane.
+        </div>
+
+        <div class="branding-features">
+          <div class="branding-feature">
+            <div class="branding-feature-icon">
+              <ng-icon name="lucideMapPin" size="16" />
+            </div>
+            Optimisation géographique par Haversine
+          </div>
+          <div class="branding-feature">
+            <div class="branding-feature-icon">
+              <ng-icon name="lucideDna" size="16" />
+            </div>
+            Algorithme Génétique Cyclique (CGA)
+          </div>
+          <div class="branding-feature">
+            <div class="branding-feature-icon">
+              <ng-icon name="lucideMap" size="16" />
+            </div>
+            Visualisation cartographique Leaflet
+          </div>
+          <div class="branding-feature">
+            <div class="branding-feature-icon">
+              <ng-icon name="lucideBarChart2" size="16" />
+            </div>
+            Métriques d'équité territoriale
+          </div>
+        </div>
+
+        <div class="branding-footer">
+          © 2026 Université Numérique Cheikh Hamidou Kane
+        </div>
+      </div>
+    </div>
+
+    <!-- Panneau droit — Formulaire -->
+    <div class="login-form-panel">
+
+      <!-- Logo UN-CHK centré -->
+      <div class="login-logo">
+        <img src="UNCHKogo.png" alt="Université Numérique Cheikh Hamidou Kane" />
+        <span>Université Numérique Cheikh Hamidou Kane</span>
+      </div>
+
+      <div class="login-form-title">Connexion</div>
+      <div class="login-form-subtitle">Bienvenue ! Connectez-vous à votre compte</div>
+
+      @if (erreur) {
+        <div class="login-error">
+          <ng-icon name="lucideAlertTriangle" size="16" /> {{ erreur }}
+        </div>
+      }
+
+      <div class="login-form-group">
+        <label class="login-label">Email</label>
+        <input
+          type="email"
+          class="login-input"
+          [class.error]="erreur"
+          [(ngModel)]="email"
+          placeholder="prenom.nom@unchk.edu.sn"
+          (keyup.enter)="login()"
+          autocomplete="email"
+        />
+      </div>
+
+      <div class="login-form-group">
+        <label class="login-label">Mot de passe</label>
+        <input
+          type="password"
+          class="login-input"
+          [class.error]="erreur"
+          [(ngModel)]="password"
+          placeholder="••••••••"
+          (keyup.enter)="login()"
+          autocomplete="current-password"
+        />
+      </div>
+
+      <button class="login-btn" (click)="login()" [disabled]="loading">
+        @if (loading) {
+          <span class="spinner-sm"></span> Connexion en cours...
+        } @else {
+          <ng-icon name="lucideArrowRight" size="16" /> Se connecter
+        }
+      </button>
+
+      <div class="login-footer">
+        Plateforme réservée aux membres de l'<a href="#">UN-CHK</a>
+      </div>
+    </div>
+
+  </div>
+</div>

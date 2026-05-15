@@ -1,0 +1,74 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">👥 Cohortes</h1>
+      <p class="page-subtitle">{{ cohortes.length }} cohorte(s) disponible(s)</p>
+    </div>
+    @if (auth.isDFIP()) {
+      <a routerLink="/cohortes/import" class="btn btn-primary">📂 Nouvelle cohorte</a>
+    }
+  </div>
+
+  <div class="filters">
+    <select class="form-control" style="width:200px" [(ngModel)]="filtreStatut" (change)="charger()">
+      <option value="">Tous les statuts</option>
+      <option value="IMPORTEE">Importée</option>
+      <option value="PRETE">Prête</option>
+      <option value="EN_COURS">En cours</option>
+      <option value="REGROUPEE">Regroupée</option>
+      <option value="VALIDEE">Validée</option>
+    </select>
+  </div>
+
+  @if (loading) {
+    <div class="loading-overlay"><div class="spinner"></div><span>Chargement...</span></div>
+  } @else if (cohortes.length === 0) {
+    <div class="card">
+      <div class="empty-state">
+        <span>📭</span>
+        <p>Aucune cohorte trouvée</p>
+        @if (auth.isDFIP()) {
+          <a routerLink="/cohortes/import" class="btn btn-primary btn-sm">Importer une cohorte</a>
+        }
+      </div>
+    </div>
+  } @else {
+    <div class="card">
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Cohorte</th>
+              <th>Spécialité</th>
+              <th>Niveau</th>
+              <th>Année</th>
+              <th>Apprenants</th>
+              <th>Statut</th>
+              <th>Créée par</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of cohortes; track c.id) {
+              <tr>
+                <td><strong>{{ c.label }}</strong></td>
+                <td>{{ c.specialite.nom }}</td>
+                <td>{{ c.specialite.niveau }}</td>
+                <td>{{ c.annee_academique }}</td>
+                <td>{{ c.nb_apprenants }}</td>
+                <td><span class="badge" [class]="getStatutClass(c.statut)">{{ c.statut }}</span></td>
+                <td>{{ c.cree_par_nom || '—' }}</td>
+                <td class="actions-cell">
+                  @if (auth.isDFIP() && (c.statut === 'PRETE' || c.statut === 'REGROUPEE')) {
+                    <a [routerLink]="['/regroupements/configurer']" [queryParams]="{cohorte_id: c.id}"
+                       class="btn btn-accent btn-sm">⚙️ Regrouper</a>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+</div>

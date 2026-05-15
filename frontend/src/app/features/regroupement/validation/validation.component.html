@@ -1,0 +1,127 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">✅ Validation des groupes</h1>
+      @if (regroupement) {
+        <p class="page-subtitle">{{ regroupement.cohorte.label }} — {{ groupes.length }} groupes</p>
+      }
+    </div>
+    <div class="header-actions">
+      <a [routerLink]="['/regroupements', regroupementId, 'carte']" class="btn btn-outline">🗺️ Carte</a>
+      <button class="btn btn-success btn-lg" (click)="valider()" [disabled]="validating || regroupement?.statut === 'VALIDE'">
+        @if (validating) { <span class="spinner-sm"></span> Validation... }
+        @else if (regroupement?.statut === 'VALIDE') { ✅ Déjà validé }
+        @else { ✅ Valider les groupes }
+      </button>
+    </div>
+  </div>
+
+  @if (messageSucces) {
+    <div class="alert alert-success">✅ {{ messageSucces }}</div>
+  }
+  @if (erreur) {
+    <div class="alert alert-danger">⚠️ {{ erreur }}</div>
+  }
+
+  <!-- Ajustement manuel -->
+  @if (regroupement?.statut !== 'VALIDE') {
+    <div class="card ajustement-card">
+      <div class="card-header">
+        <h2 class="card-title">🔄 Ajustement manuel</h2>
+      </div>
+      <div class="ajustement-form">
+        <div class="form-group">
+          <label class="form-label">Apprenant à déplacer</label>
+          <select class="form-control" [(ngModel)]="apprenantSelectionne">
+            <option [ngValue]="null">-- Sélectionner un apprenant --</option>
+            @for (g of groupes; track g.id) {
+              <optgroup [label]="'Groupe ' + g.numero + ' — ' + g.eno_nom">
+                @for (m of g.membres || []; track m.id) {
+                  <option [value]="m.apprenant.id">
+                    {{ m.apprenant.prenom }} {{ m.apprenant.nom }} ({{ m.apprenant.ine }})
+                    {{ m.est_hors_eno ? '⚠️' : '' }}
+                  </option>
+                }
+              </optgroup>
+            }
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Groupe de destination</label>
+          <select class="form-control" [(ngModel)]="groupeDestination">
+            <option [ngValue]="null">-- Sélectionner un groupe --</option>
+            @for (g of groupes; track g.id) {
+              <option [value]="g.id">Groupe {{ g.numero }} — {{ g.eno_nom }} ({{ g.taille }} membres)</option>
+            }
+          </select>
+        </div>
+        <button class="btn btn-accent" (click)="deplacerApprenant()"
+                [disabled]="!apprenantSelectionne || !groupeDestination || deplacement_loading">
+          @if (deplacement_loading) { <span class="spinner-sm"></span> }
+          🔄 Déplacer
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- Liste des groupes -->
+  @if (loading) {
+    <div class="loading-overlay"><div class="spinner"></div></div>
+  } @else {
+    <div class="groupes-grid">
+      @for (g of groupes; track g.id) {
+        <div class="card groupe-card" [class.hors-eno]="g.nb_hors_eno > 0">
+          <div class="groupe-header">
+            <div class="groupe-titre">
+              <span class="groupe-num">{{ g.numero }}</span>
+              <div>
+                <strong>{{ g.eno_nom }}</strong>
+                <span class="groupe-region">{{ g.eno_region }}</span>
+              </div>
+            </div>
+            <div class="groupe-metriques">
+              <span>{{ g.taille }} membres</span>
+              <span>{{ g.dist_moy_km | number:'1.1-1' }} km moy.</span>
+              @if (g.nb_hors_eno > 0) {
+                <span class="badge badge-en-cours">⚠️ {{ g.nb_hors_eno }} hors ENO</span>
+              }
+            </div>
+          </div>
+
+          @if (g.membres) {
+            <div class="membres-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>INE</th>
+                    <th>Nom</th>
+                    <th>Prénom</th>
+                    <th>Dist. ENO</th>
+                    <th>Statut</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (m of g.membres; track m.id) {
+                    <tr [class.hors-eno-row]="m.est_hors_eno">
+                      <td>{{ m.apprenant.ine }}</td>
+                      <td>{{ m.apprenant.nom }}</td>
+                      <td>{{ m.apprenant.prenom }}</td>
+                      <td>{{ m.distance_eno_km | number:'1.1-1' }} km</td>
+                      <td>
+                        @if (m.est_hors_eno) {
+                          <span class="badge badge-en-cours" title="ENO admin : {{ m.eno_administratif_nom }}">⚠️ Hors ENO</span>
+                        } @else {
+                          <span class="badge badge-prete">✓</span>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

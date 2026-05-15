@@ -1,0 +1,152 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">📂 Import de cohorte</h1>
+      <p class="page-subtitle">Importez un fichier CSV ou générez des données synthétiques</p>
+    </div>
+    <button class="btn btn-outline" (click)="telechargerModele()">⬇️ Télécharger le modèle CSV</button>
+  </div>
+
+  <!-- Résultat succès -->
+  @if (resultat) {
+    <div class="card success-card">
+      <div class="success-icon">✅</div>
+      <h2>Import réussi !</h2>
+      <p><strong>{{ resultat.nb_apprenants }}</strong> apprenants importés dans la cohorte <strong>{{ resultat.cohorte_label }}</strong></p>
+
+      @if (resultat.enos_peu_peuples.length > 0) {
+        <div class="alert alert-warning">
+          ⚠️ ENO peu peuplés détectés : {{ resultat.enos_peu_peuples.join(', ') }}.
+          Ces apprenants seront rattachés au groupe géographiquement le plus proche lors du regroupement.
+        </div>
+      }
+
+      @if (hasRepartition()) {
+        <div class="repartition">
+          <h3>Répartition par ENO</h3>
+          <div class="eno-grid">
+            @for (entry of resultat.repartition_eno | keyvalue; track entry.key) {
+              <div class="eno-item">
+                <span class="eno-code">{{ entry.key }}</span>
+                <span class="eno-count">{{ entry.value }}</span>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <div class="success-actions">
+        <button class="btn btn-primary btn-lg" (click)="allerRegroupement()">⚙️ Configurer le regroupement</button>
+        <button class="btn btn-outline" (click)="resultat = null">Nouvel import</button>
+      </div>
+    </div>
+  } @else {
+    <!-- Onglets Import / Démo -->
+    <div class="tabs">
+      <button class="tab" [class.active]="!modeDemo" (click)="modeDemo = false">📄 Import CSV</button>
+      <button class="tab" [class.active]="modeDemo" (click)="modeDemo = true">🔬 Données synthétiques</button>
+    </div>
+
+    <div class="card">
+      <!-- Champs communs -->
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Label de la cohorte *</label>
+          <input type="text" class="form-control" [(ngModel)]="label"
+            placeholder="ex: Master IL — Promotion 2025-2026" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Année académique *</label>
+          <input type="text" class="form-control" [(ngModel)]="annee"
+            placeholder="2025-2026" pattern="\d{4}-\d{4}" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Spécialité *</label>
+        <select class="form-control" [(ngModel)]="specialite_id">
+          <option [ngValue]="null">-- Sélectionner une spécialité --</option>
+          @for (s of specialites; track s.id) {
+            <option [value]="s.id">{{ s.nom }} ({{ s.niveau }})</option>
+          }
+        </select>
+      </div>
+
+      @if (!modeDemo) {
+        <!-- Import CSV -->
+        <div class="form-group">
+          <label class="form-label">Fichier CSV *</label>
+          <div class="file-drop" (click)="fileInput.click()">
+            @if (fichier) {
+              <span class="file-name">📄 {{ fichier.name }}</span>
+            } @else {
+              <span>Cliquez pour sélectionner un fichier CSV</span>
+              <small>Colonnes requises : ine, nom, prenom, email, latitude, longitude, eno_code</small>
+            }
+          </div>
+          <input #fileInput type="file" accept=".csv" (change)="onFichierChange($event)" hidden />
+        </div>
+
+        <div class="alert alert-info">
+          ℹ️ Les coordonnées GPS doivent être dans les limites du Sénégal (lat: 12.3°N–16.7°N, lon: 17.5°O–11.3°O).
+          Les codes ENO doivent correspondre aux 18 ENO officiels (ENO-DKR, ENO-THI, etc.).
+        </div>
+
+        @if (erreur) {
+          <div class="alert alert-danger">⚠️ {{ erreur }}</div>
+        }
+
+        @if (erreurs_csv.length > 0) {
+          <div class="erreurs-csv">
+            <h3>Erreurs détectées ({{ erreurs_csv.length }})</h3>
+            <div class="table-container">
+              <table>
+                <thead><tr><th>Ligne</th><th>INE</th><th>Erreurs</th></tr></thead>
+                <tbody>
+                  @for (e of erreurs_csv.slice(0, 20); track e.ligne) {
+                    <tr>
+                      <td>{{ e.ligne }}</td>
+                      <td>{{ e.ine || '—' }}</td>
+                      <td>{{ e.erreurs.join(', ') }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+
+        <button class="btn btn-primary btn-lg" (click)="importer()" [disabled]="loading">
+          @if (loading) { <span class="spinner-sm"></span> Import en cours... }
+          @else { 📂 Importer le fichier }
+        </button>
+
+      } @else {
+        <!-- Données synthétiques -->
+        <div class="alert alert-info">
+          🔬 Génère des données synthétiques avec les coordonnées GPS réelles des 18 ENO (SEED={{ seed_demo }} pour la reproductibilité).
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Nombre d'apprenants (10–500)</label>
+            <input type="number" class="form-control" [(ngModel)]="nb_apprenants_demo" min="10" max="500" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">SEED (reproductibilité)</label>
+            <input type="number" class="form-control" [(ngModel)]="seed_demo" />
+          </div>
+        </div>
+
+        @if (erreur) {
+          <div class="alert alert-danger">⚠️ {{ erreur }}</div>
+        }
+
+        <button class="btn btn-accent btn-lg" (click)="genererDonnees()" [disabled]="loading">
+          @if (loading) { <span class="spinner-sm"></span> Génération en cours... }
+          @else { 🔬 Générer les données }
+        </button>
+      }
+    </div>
+  }
+</div>

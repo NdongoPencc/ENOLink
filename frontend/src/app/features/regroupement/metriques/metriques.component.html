@@ -1,0 +1,150 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">📊 Métriques d'équité territoriale</h1>
+      @if (metriques) {
+        <p class="page-subtitle">{{ metriques.cohorte }} — Regroupement #{{ regroupementId }}</p>
+      }
+    </div>
+    @if (metriques) {
+      <div class="header-actions">
+        <a [routerLink]="['/regroupements', regroupementId, 'carte']" class="btn btn-outline">🗺️ Carte</a>
+        <button class="btn btn-outline" (click)="exportCSV()">⬇️ CSV</button>
+        <button class="btn btn-primary" (click)="exportPDF()">📄 Rapport PDF</button>
+      </div>
+    }
+  </div>
+
+  @if (loading) {
+    <div class="loading-overlay"><div class="spinner"></div><span>Chargement...</span></div>
+  } @else if (metriques) {
+    <!-- KPIs globaux -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value">{{ metriques.d_geo_final | number:'1.2-2' }}</div>
+        <div class="stat-label">D_geo final (km)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">{{ metriques.p_eno_final }}</div>
+        <div class="stat-label">P_ENO final</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">{{ metriques.fitness_final | number:'1.4-4' }}</div>
+        <div class="stat-label">Fitness final</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">{{ metriques.variance_territoriale | number:'1.2-2' }}</div>
+        <div class="stat-label">Variance territoriale</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">{{ metriques.nb_groupes }}</div>
+        <div class="stat-label">Groupes formés</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">{{ metriques.nb_hors_eno }}</div>
+        <div class="stat-label">Apprenants hors ENO</div>
+      </div>
+    </div>
+
+    @if (metriques.nb_hors_eno > 0) {
+      <div class="alert alert-warning">
+        ⚠️ {{ metriques.nb_hors_eno }} apprenant(s) ont été rattachés à un ENO différent de leur ENO administratif.
+        Cela est dû à des ENO peu peuplés ne permettant pas de former un groupe complet (contrainte C2).
+      </div>
+    }
+
+    <div class="metriques-layout">
+      <!-- Métriques par ENO -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Métriques par ENO</h2>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>ENO</th>
+                <th>Région</th>
+                <th>Groupes</th>
+                <th>Apprenants</th>
+                <th>Dist. moy. (km)</th>
+                <th>Hors ENO</th>
+                <th>Équité</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (e of metriques.metriques_par_eno; track e.eno_id) {
+                <tr>
+                  <td><strong>{{ e.eno_nom }}</strong></td>
+                  <td>{{ e.eno_region }}</td>
+                  <td>{{ e.nb_groupes }}</td>
+                  <td>{{ e.nb_apprenants }}</td>
+                  <td>{{ e.dist_moy_km | number:'1.2-2' }}</td>
+                  <td>
+                    @if (e.nb_hors_eno > 0) {
+                      <span class="badge badge-en-cours">⚠️ {{ e.nb_hors_eno }}</span>
+                    } @else {
+                      <span class="badge badge-prete">✓ 0</span>
+                    }
+                  </td>
+                  <td>
+                    <div class="equite-bar">
+                      <div class="equite-fill" [style.width.%]="(e.dist_moy_km / maxDistMoy) * 100"
+                           [style.background]="e.dist_moy_km > 80 ? '#c62828' : e.dist_moy_km > 50 ? '#f57f17' : '#2e7d32'">
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Courbe de convergence -->
+      @if (metriques.historique_fitness.length > 0) {
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Convergence du CGA</h2>
+          </div>
+          <div class="convergence-chart">
+            <div class="chart-labels-y">
+              <span>{{ metriques.historique_fitness[0].fitness | number:'1.2-2' }}</span>
+              <span>{{ metriques.fitness_final | number:'1.2-2' }}</span>
+            </div>
+            <div class="chart-area">
+              <svg viewBox="0 0 800 200" preserveAspectRatio="none" class="chart-svg">
+                <polyline
+                  [attr.points]="getConvergencePoints()"
+                  fill="none"
+                  stroke="#1a237e"
+                  stroke-width="2"
+                />
+                <polyline
+                  [attr.points]="getConvergencePoints()"
+                  fill="url(#grad)"
+                  stroke="none"
+                  opacity="0.2"
+                />
+                <defs>
+                  <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#1a237e"/>
+                    <stop offset="100%" stop-color="transparent"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+            <div class="chart-labels-x">
+              <span>Génération 1</span>
+              <span>Génération {{ metriques.historique_fitness.length }}</span>
+            </div>
+          </div>
+          <p class="chart-caption">
+            Convergence en {{ metriques.temps_execution_sec | number:'1.1-1' }}s —
+            Fitness : {{ metriques.historique_fitness[0].fitness | number:'1.4-4' }} → {{ metriques.fitness_final | number:'1.4-4' }}
+          </p>
+        </div>
+      }
+    </div>
+  }
+</div>

@@ -1,0 +1,160 @@
+<div class="page-container">
+  <!-- Bannière UN-CHK -->
+  <div class="welcome-banner">
+    <div class="welcome-text">
+      <h1>Bonjour, {{ auth.utilisateur()?.prenom }} {{ auth.utilisateur()?.nom }}</h1>
+      <p>Université Numérique Cheikh Hamidou Kane — Système ENOLink de regroupement des apprenants</p>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      @if (auth.isDFIP()) {
+        <a routerLink="/cohortes/import" class="btn btn-lg" style="background:white;color:var(--unchk-green);font-weight:700;">
+          <ng-icon name="lucideUpload" size="16" /> Importer
+        </a>
+        <a routerLink="/regroupements/configurer" class="btn btn-lg" style="background:var(--unchk-orange);color:white;">
+          <ng-icon name="lucideSettings" size="16" /> Regrouper
+        </a>
+      }
+      <span class="welcome-badge">{{ auth.utilisateur()?.role }}</span>
+    </div>
+  </div>
+
+  @if (loading) {
+    <div class="loading-overlay"><div class="spinner"></div><span>Chargement...</span></div>
+  } @else {
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <ng-icon name="lucideUsers" size="28" style="color:var(--unchk-green);margin-bottom:8px;" />
+        <div class="stat-value">{{ stats.total_cohortes }}</div>
+        <div class="stat-label">Cohortes</div>
+      </div>
+      <div class="stat-card accent">
+        <ng-icon name="lucideGraduationCap" size="28" style="color:var(--unchk-orange);margin-bottom:8px;" />
+        <div class="stat-value">{{ stats.total_apprenants }}</div>
+        <div class="stat-label">Apprenants importés</div>
+      </div>
+      <div class="stat-card blue">
+        <ng-icon name="lucideLayers" size="28" style="color:var(--unchk-blue);margin-bottom:8px;" />
+        <div class="stat-value">{{ stats.total_groupes }}</div>
+        <div class="stat-label">Groupes formés</div>
+      </div>
+      <div class="stat-card">
+        <ng-icon name="lucideCheckCircle" size="28" style="color:var(--unchk-green);margin-bottom:8px;" />
+        <div class="stat-value">{{ stats.cohortes_validees }}</div>
+        <div class="stat-label">Cohortes validées</div>
+      </div>
+    </div>
+
+    <div class="dashboard-grid">
+      <!-- Cohortes récentes -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <ng-icon name="lucideUsers" size="18" style="color:var(--unchk-green);" /> Cohortes récentes
+          </h2>
+          <a routerLink="/cohortes" class="btn btn-outline btn-sm">
+            <ng-icon name="lucideEye" size="14" /> Voir tout
+          </a>
+        </div>
+        @if (cohortes.length === 0) {
+          <div class="empty-state">
+            <ng-icon name="lucideUsers" size="40" style="color:var(--border);" />
+            <p>Aucune cohorte importée</p>
+            @if (auth.isDFIP()) {
+              <a routerLink="/cohortes/import" class="btn btn-primary btn-sm">
+                <ng-icon name="lucideUpload" size="14" /> Importer
+              </a>
+            }
+          </div>
+        } @else {
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Cohorte</th>
+                  <th>Spécialité</th>
+                  <th>Apprenants</th>
+                  <th>Statut</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (c of cohortes; track c.id) {
+                  <tr>
+                    <td><strong>{{ c.label }}</strong><br><small>{{ c.annee_academique }}</small></td>
+                    <td>{{ c.specialite.nom }}</td>
+                    <td>{{ c.nb_apprenants }}</td>
+                    <td><span class="badge" [class]="getStatutClass(c.statut)">{{ c.statut }}</span></td>
+                    <td>
+                      @if (auth.isDFIP() && (c.statut === 'PRETE' || c.statut === 'REGROUPEE')) {
+                        <a [routerLink]="['/regroupements/configurer']" [queryParams]="{cohorte_id: c.id}" class="btn btn-accent btn-sm">
+                          <ng-icon name="lucideSettings" size="13" /> Regrouper
+                        </a>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+
+      <!-- Regroupements récents -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <ng-icon name="lucideActivity" size="18" style="color:var(--unchk-green);" /> Regroupements récents
+          </h2>
+        </div>
+        @if (regroupements.length === 0) {
+          <div class="empty-state">
+            <ng-icon name="lucideDna" size="40" style="color:var(--border);" />
+            <p>Aucun regroupement effectué</p>
+          </div>
+        } @else {
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Cohorte</th>
+                  <th>w₁/w₂</th>
+                  <th>Groupes</th>
+                  <th>D_geo</th>
+                  <th>Statut</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (r of regroupements; track r.id) {
+                  <tr>
+                    <td>{{ r.cohorte.label }}</td>
+                    <td>{{ r.w1 }}/{{ r.w2 }}</td>
+                    <td>{{ r.nb_groupes ?? '—' }}</td>
+                    <td>{{ r.d_geo_final != null ? (r.d_geo_final | number:'1.2-2') + ' km' : '—' }}</td>
+                    <td><span class="badge" [class]="getStatutClass(r.statut)">{{ r.statut }}</span></td>
+                    <td class="actions-cell">
+                      @if (r.statut === 'TERMINE' || r.statut === 'VALIDE') {
+                        <a [routerLink]="['/regroupements', r.id, 'carte']" class="btn btn-outline btn-sm">
+                          <ng-icon name="lucideMap" size="13" />
+                        </a>
+                        <a [routerLink]="['/regroupements', r.id, 'metriques']" class="btn btn-outline btn-sm">
+                          <ng-icon name="lucideBarChart2" size="13" />
+                        </a>
+                      }
+                      @if (r.statut === 'EN_COURS' || r.statut === 'EN_ATTENTE') {
+                        <a [routerLink]="['/regroupements', r.id, 'carte']" class="btn btn-outline btn-sm">
+                          <ng-icon name="lucideClock" size="13" /> Suivi
+                        </a>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>
